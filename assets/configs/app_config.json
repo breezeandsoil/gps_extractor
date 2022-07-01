@@ -1,0 +1,25 @@
+{
+	"mqtt_broker" : {
+		"recv" : {
+			"clientIdentifier" : "flutter-mqtt-recv",
+			"host" : "127.0.0.1", 
+			"port" : 1883,
+			"timeout" : 5,
+			"keepAlive" : 20,
+			"logging" : false,
+			"autoReconnect" : true
+		},
+		"send" : {
+			"clientIdentifier" : "flutter-mqtt-send",
+			"host" : "127.0.0.1", 
+			"port" : 1883,
+			"timeout" : 5,
+			"keepAlive" : 20,
+			"logging" : false,
+			"autoReconnect" : true
+		}
+	},
+	"init_proc" : {
+		"timeout" : 5
+	}
+}
