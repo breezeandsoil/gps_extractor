@@ -46,6 +46,9 @@ class _PageExample1State extends StateMVC<PageExample1> {
 	void dispose() {
 		//*** something code here. ***/
 		app_logger.v(Printer.format(StackTrace.current, "dispose is called."));
+		
+		
+		
 		super.dispose();
 	}
 
@@ -66,37 +69,93 @@ class _PageExample1State extends StateMVC<PageExample1> {
 						),
 					)
 				),
+			
+				body : ListView.builder(
+					itemCount: _controller_example_1.positionItemLength,
+					itemBuilder: (context, index) {
+						final positionItem = _controller_example_1.getPositionItem(
+							_controller_example_1.positionItemLength - index - 1);
+
+						if (positionItem.type == PositionItemType.log) {
+							return ListTile(
+								title: Text(positionItem.displayValue,
+									textAlign: TextAlign.center,
+									style: const TextStyle(
+										color: Colors.black,
+										fontWeight: FontWeight.bold
+									)
+								)
+							);
+						} else {
+							return Card(
+								child: ListTile(
+									title: Text(
+										positionItem.displayValue,
+										style: const TextStyle(
+											color: Colors.black
+										)
+									)
+								)
+							);
+						}
+					}
+				),
+
+				floatingActionButton: Column(
+					crossAxisAlignment: CrossAxisAlignment.end,
+					mainAxisAlignment: MainAxisAlignment.end,
+					children: [
+						FloatingActionButton(
+							child: (_controller_example_1.isStreamInitialized) 
+								? const Icon(Icons.pause)
+								: const Icon(Icons.play_arrow),
+							heroTag: "GPS Stream",
+							onPressed: () {
+								_controller_example_1.toggleListening();
+							},
+							tooltip: (_controller_example_1.isStreamInitialized) ? "Stop" : "Start",
+							backgroundColor: (_controller_example_1.isStreamInitialized) ? Colors.green : Colors.red
+						),
+		
+						FloatingActionButton(
+							child: const Icon(Icons.my_location),
+							heroTag: "Current GPS",
+							onPressed: () {
+								_controller_example_1.getCurrentGPSPosition();
+							},
+							tooltip: "Current GPS"
+						),
+
+						FloatingActionButton(
+							child: const Icon(Icons.cleaning_services),
+							heroTag: "Clear Screen",
+							onPressed: () {
+								_controller_example_1.clearPositionItems();
+							},
+							tooltip: "Clear Screen"
+						),
+
+
+
+					],
+				)
+
+				/*
 				body: Center(
 					child: Column(
 						mainAxisAlignment: MainAxisAlignment.center,
 						children: <Widget>[
-							Text("[GPS]: ${_controller_example_1.gps}"),
-							
-							OutlinedButton(
-								child: Text("Get Current GPS Position"),
-								onPressed: () {
-									_controller_example_1.getCurrentGPSPosition();
-								}
-							),
-
-							OutlinedButton(
-								child: Text("MQTT Send Message"),
-								onPressed: () {
-									app_mqtt_send_channels[MqttTopic.data_type_gps]?.sink.add(_controller_example_1.gps);
-								}
-							),
-							
-							/*
 							ElevatedButton(
 								child: Text("Go To Next Page"),
 								onPressed: () {
 									Navigator.pushNamed(context, PageExample2.pageName);
 								}
 							)
-							*/
+						
 						]
 					)
 				)
+				*/
 			),
 			onWillPop: () async {
 				// when return false.

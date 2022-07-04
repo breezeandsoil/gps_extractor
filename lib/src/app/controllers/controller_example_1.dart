@@ -1,5 +1,8 @@
 import 'package:gps_extractor/src/app/controllers/controllers_common_interface.dart';
 import 'package:gps_extractor/src/app/app_models_interface.dart';
+import 'package:gps_extractor/src/app_data.dart';
+import 'package:gps_extractor/src/app_constant.dart';
+
 import 'package:geolocator/geolocator.dart';
 
 class ControllerExample_1 extends ControllerMVC {
@@ -17,21 +20,48 @@ class ControllerExample_1 extends ControllerMVC {
 	final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
 
 	// Note, the counter comes from a separate class, ModelExample_1.
-	String get gps => (_model as ModelExample_1).message;
-
 	// The Controller know how to 'talk to' the Model and to the View (interface).
+	// Call the State, (a.k.a View) object's setState() function to reflect the change.
 	
-	// Call the State, a.k.a View) object's setState() function to reflect the change.
+	bool get isStreamInitialized => (_model as ModelExample_1).isStreamInitialized;
+	int get positionItemLength => (_model as ModelExample_1).positionItemsLength;
 	
-	void getCurrentGPSPosition() async {
+	PositionItem getPositionItem(int index) => (_model as ModelExample_1).getPositionItem(index);
+
+	void _updatePositionList(PositionItemType type, String displayValue) {
+		(_model as ModelExample_1).addPositionItem(PositionItem(type, displayValue));
+		setState((){});
+	}
+
+	void clearPositionItems() {
+		(_model as ModelExample_1).clearPositionItems();	
+		setState((){});
+	}
+
+	void toggleListening() {
+		ModelExample_1 model = _model as ModelExample_1;
+	
+		if (!model.isStreamInitialized) {
+			model.stream = _geolocatorPlatform.getPositionStream().handleError((error) {
+				model.stream = null;	
+			}).listen((gpsPosition) {
+				_updatePositionList(PositionItemType.position, gpsPosition.toString());
+				app_mqtt_send_channels[MqttTopic.data_type_gps]?.sink.add(gpsPosition.toString());
+			});
+			
+			_updatePositionList(PositionItemType.log, "Listening Start");
+		} else {
+			model.stream = null;
+			_updatePositionList(PositionItemType.log, "Listening Stopped");
+		}
+	}
+
+	Future<void> getCurrentGPSPosition() async {
 		ModelExample_1 model = _model as ModelExample_1;
 
 		var serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
 		if (!serviceEnabled) {
-			setState((){
-				model.setMessage(ModelExample_1.kLocationServicesDisabledMessage);
-			});
-			
+			_updatePositionList(PositionItemType.log, ModelExample_1.kLocationServicesDisabledMessage);
 			return;
 		}
 
@@ -45,10 +75,7 @@ class ControllerExample_1 extends ControllerMVC {
 				// returned true. According to Android guidelines
 				// your App should show an explanatory UI now.
 
-				setState((){
-					model.setMessage(ModelExample_1.kPermissionDeniedMessage);
-				});
-
+				_updatePositionList(PositionItemType.log, ModelExample_1.kPermissionDeniedMessage);
     	    	return;
 			}
     	}
@@ -56,17 +83,14 @@ class ControllerExample_1 extends ControllerMVC {
 		if (permission == LocationPermission.deniedForever) {
 			// Permissions are denied forever, handle appropriately.
    
-			setState((){
-				model.setMessage(ModelExample_1.kPermissionDeniedForeverMessage);
-			});
-
+			_updatePositionList(PositionItemType.log, ModelExample_1.kPermissionDeniedForeverMessage);
 			return;
 		}
 
 		var gpsPosition = await _geolocatorPlatform.getCurrentPosition();
-   
-		setState((){
-			model.setMessage(gpsPosition.toString());	
-		});
+  
+		_updatePositionList(PositionItemType.position, gpsPosition.toString());
+
+		app_mqtt_send_channels[MqttTopic.data_type_gps]?.sink.add(gpsPosition.toString());
 	}
 }
